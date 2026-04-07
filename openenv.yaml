@@ -1,0 +1,38 @@
+name: RecallCoordinatorEnv
+version: "1.0.0"
+description: >
+  AI environment for product safety recall coordination.
+  Agent triages incident reports, detects hazard patterns,
+  makes regulatory decisions, and coordinates cross-functional response.
+tags:
+  - openenv
+tasks:
+  - id: single_triage
+    description: "Classify and route a single incident report"
+    difficulty: easy
+  - id: pattern_recall
+    description: "Aggregate multi-report pattern and initiate recall"
+    difficulty: medium
+  - id: full_recall_plan
+    description: "Full recall coordination under deadline and budget"
+    difficulty: hard
+action_space:
+  type: structured
+  actions:
+    - classify_incident
+    - route
+    - query_db
+    - draft_message
+    - choose_remediation
+    - publish_plan
+observation_space:
+  type: structured
+  fields:
+    - incident_reports
+    - current_plan_state
+    - constraints
+    - validation_errors
+    - step_number
+    - task_id
+    - task_description
+
