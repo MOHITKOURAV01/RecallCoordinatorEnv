@@ -1,0 +1,16 @@
+services:
+  recall-coordinator:
+    build:
+      context: .
+    image: recall-coordinator-env:local
+    ports:
+      - "7860:7860"
+    environment:
+      # Server settings (safe defaults exist in Dockerfile).
+      PORT: "7860"
+      HOST: "0.0.0.0"
+      # Inference settings (used only if you run inference.py locally).
+      ENV_URL: "http://localhost:7860"
+      API_BASE_URL: "https://api.openai.com/v1"
+      MODEL_NAME: "gpt-4.1-mini"
+      # HF_TOKEN: "set-me"
