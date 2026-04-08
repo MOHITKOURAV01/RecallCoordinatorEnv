@@ -73,6 +73,9 @@ def main() -> None:
 
     with httpx.Client(timeout=timeout) as http:
         for task_id in tasks:
+            info: Dict[str, Any] = {}
+            final_grader_score = 0.0
+
             # Reset env
             obs: Dict[str, Any] = {}
             try:
@@ -142,15 +145,19 @@ def main() -> None:
                 )
 
                 if done:
-                    grader_score = float((info or {}).get("grader_score", 0.0))
-                    success = grader_score >= 0.9
+                    final_grader_score = float((info or {}).get("grader_score", 0.0))
+                    success = final_grader_score >= 0.9
                     break
 
                 # Keep runtime bounded and allow server time.
                 time.sleep(0.05)
 
             rewards_str = ",".join(f"{r:.2f}" for r in rewards)
-            print(f"[END] success={_fmt_done(success)} steps={steps_taken} rewards={rewards_str}", flush=True)
+            final_grader_score = float((info or {}).get("grader_score", 0.0))
+            print(
+                f"[END] success={_fmt_done(success)} steps={steps_taken} score={final_grader_score:.3f} rewards={rewards_str}",
+                flush=True,
+            )
 
 
 if __name__ == "__main__":
