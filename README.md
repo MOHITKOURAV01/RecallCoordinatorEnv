@@ -16,7 +16,10 @@ license: mit
 ![hf](https://img.shields.io/badge/HF%20Spaces-%F0%9F%A4%97-yellow)
 ![python](https://img.shields.io/badge/Python-3.11%2B-blue)
 
+
+
 ## Overview
+
 `RecallCoordinatorEnv` is a production-grade OpenEnv environment that simulates **consumer product safety recall coordination**—the work a real product safety officer does when incident reports begin to suggest a defect: triage, pattern detection, traceability checks, regulatory decisions, and cross-functional execution under **time and budget pressure**.
 
 This domain matters for AI agent training because it combines **high-stakes decision-making** (safety and regulatory impact), **procedural compliance** (sequencing constraints and irreversible publish actions), and **artifact generation** (structured classifications + templated communications). It’s a realistic testbed for agents that must operate in messy, partially observed workflows without “game-like” shortcuts.
@@ -25,7 +28,10 @@ What makes this environment unique is the combination of (1) **deterministic syn
 
 Target use cases include: training agents to follow regulated workflows, evaluating tool-using planning policies, benchmarking action sequencing and documentation quality, and stress-testing robustness under constraints (step budgets, deadlines, and spend).
 
-## Environment Architecture
+
+
+
+## Environment Architecture :-
 
 ```
                  ┌──────────────────────────────────────────┐
@@ -54,6 +60,9 @@ State flow (single episode):
   reset() -> Observation(step=0) -> step(action) -> ... -> done -> final grader score
 ```
 
+
+
+
 ## Action Space
 
 | action_name | parameters | description | example |
@@ -72,6 +81,9 @@ State flow (single episode):
 - **`template_id`**: one of `customer_notice_v1`, `regulator_notice_v1`, `internal_brief_v1`
 - **Budget/deadline**: each step consumes “time” deterministically; actions spend budget deterministically; exceeding budget is penalized
 
+
+
+
 ## Observation Space
 
 | field | type | description | example_value |
@@ -88,6 +100,10 @@ State flow (single episode):
 - **Can see**: all incident report text/fields, current artifacts (tickets/drafts/queries), remaining budget and hours.
 - **Cannot see**: any hidden “ground truth” causality; must infer action choices from patterns and constraints.
 - **Deterministic**: same `task_id` always resets to the same initial observation.
+
+
+
+
 
 ## Task Descriptions
 
@@ -107,6 +123,9 @@ State flow (single episode):
   2. `route` team `"quality"`
   3. `choose_remediation` strategy `"service_bulletin"`
   4. `publish_plan` plan_id `"plan-001"`
+
+
+
 
 ### Task 2 — `pattern_recall` (Medium): “Cross-region pattern → recall”
 - **Difficulty**: Medium
@@ -131,6 +150,9 @@ State flow (single episode):
   3. `draft_message` channel `regulator` with `regulator_notice_v1` and filled variables
   4. `choose_remediation` strategy `"recall"`
   5. `publish_plan` plan_id `"plan-002"` (≤ 12 total steps)
+
+
+
 
 ### Task 3 — `full_recall_plan` (Hard): “Full recall plan under budget + deadline”
 - **Difficulty**: Hard
@@ -166,6 +188,9 @@ State flow (single episode):
   5. `choose_remediation` strategy `"recall"`
   6. `publish_plan` plan_id `"plan-003"` before budget/deadline run out
 
+
+
+
 ## Reward Function
 
 The reward function is intentionally **trajectory-shaped**: it trains agents to (1) avoid invalid/looping behavior, (2) sequence work like a real recall process, and (3) generate complete artifacts before irreversible publish.
@@ -185,6 +210,10 @@ Step rewards are normalized to **`[-0.5, 1.0]`** and include micro-rewards, mile
 | Publishing with requirements met | +++ | Completion milestone. |
 | Publishing prematurely (no classification / missing requirements) | -- | Irreversible bad action penalty. |
 | Budget exceeded / deadline hits zero before publish | -- | Enforces real-world constraints. |
+
+
+
+
 
 ## Quick Start
 
