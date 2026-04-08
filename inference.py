@@ -86,7 +86,7 @@ def main() -> None:
                 # If reset fails, still print required header and attempt steps (they will fail).
                 obs = {"task_id": task_id, "task_description": "", "step_number": 0, "validation_errors": [str(e)]}
 
-            print(f"[START] task={task_id} env=RecallCoordinatorEnv model={MODEL_NAME}", flush=True)
+            print(f"START task={task_id} env=RecallCoordinatorEnv model={MODEL_NAME}", flush=True)
 
             rewards: List[float] = []
             success = False
@@ -140,7 +140,7 @@ def main() -> None:
 
                 rewards.append(reward)
                 print(
-                    f"[STEP] step={step_idx} action={action_type} reward={reward:.2f} done={_fmt_done(done)} error={_fmt_error(info.get('error') if err is None else err)}",
+                    f"STEP step={step_idx} action={action_type} reward={reward:.2f} done={_fmt_done(done)} error={_fmt_error(info.get('error') if err is None else err)}",
                     flush=True,
                 )
 
@@ -155,7 +155,7 @@ def main() -> None:
             rewards_str = ",".join(f"{r:.2f}" for r in rewards)
             final_grader_score = float((info or {}).get("grader_score", 0.0))
             print(
-                f"[END] success={_fmt_done(success)} steps={steps_taken} score={final_grader_score:.3f} rewards={rewards_str}",
+                f"END success={_fmt_done(success)} steps={steps_taken} score={final_grader_score:.3f} rewards={rewards_str}",
                 flush=True,
             )
 
