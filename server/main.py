@@ -76,10 +76,11 @@ def _get_env() -> RecallCoordinatorEnv:
 
 
 @app.post("/reset", response_model=Observation)
-def reset(req: ResetRequest) -> Observation:
-    if req.task_id not in TASKS:
-        raise HTTPException(status_code=400, detail=f"Unknown task_id: {req.task_id}")
-    env = RecallCoordinatorEnv(task_id=req.task_id, max_steps=20)
+def reset(req: Optional[ResetRequest] = None) -> Observation:
+    task_id = (req.task_id if req is not None else None) or "single_triage"
+    if task_id not in TASKS:
+        raise HTTPException(status_code=400, detail=f"Unknown task_id: {task_id}")
+    env = RecallCoordinatorEnv(task_id=task_id, max_steps=20)
     app.state.env = env
     return env.reset()
 
