@@ -36,3 +36,11 @@ observation_space:
     - task_id
     - task_description
 
+reward_space:
+  type: continuous
+  range: [-0.5, 1.0]
+  description: >
+    Step rewards in [-0.5, 1.0] for incremental progress.
+    Final episode score in [0.0, 1.0] from deterministic task graders.
+    Partial credit rewarded throughout trajectory.
+
