@@ -79,5 +79,56 @@ def get_state() -> State:
 
 @app.get("/health")
 def health() -> Dict[str, Any]:
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "tasks": ["single_triage", "pattern_recall", "full_recall_plan"],
+        "version": "1.0.0",
+        "env": "RecallCoordinatorEnv",
+    }
+
+
+@app.get("/tasks")
+def list_tasks() -> Dict[str, Any]:
+    return {
+        "tasks": [
+            {
+                "task_id": spec.task_id,
+                "difficulty": spec.difficulty,
+                "description": spec.description,
+                "num_reports": len(spec.initial_reports),
+                "constraints": dict(spec.initial_constraints),
+            }
+            for spec in TASKS.values()
+        ]
+    }
+
+
+@app.post("/validate")
+def validate_action(action: Action) -> Dict[str, Any]:
+    from server.rewards import ALLOWED_ACTION_TYPES
+
+    errors = []
+    if action.action_type not in ALLOWED_ACTION_TYPES:
+        errors.append(
+            f"Invalid action_type: '{action.action_type}'. "
+            f"Must be one of: {sorted(ALLOWED_ACTION_TYPES)}"
+        )
+    p = action.parameters or {}
+    required_params = {
+        "classify_incident": ["report_id", "severity", "hazard_type"],
+        "route": ["team"],
+        "query_db": ["entity", "filters"],
+        "draft_message": ["channel", "template_id", "variables"],
+        "choose_remediation": ["strategy"],
+        "publish_plan": ["plan_id"],
+    }
+    if action.action_type in required_params:
+        for k in required_params[action.action_type]:
+            if k not in p:
+                errors.append(f"Missing required parameter: '{k}'")
+    return {
+        "valid": len(errors) == 0,
+        "errors": errors,
+        "action_type": action.action_type,
+    }
 
