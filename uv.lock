@@ -1,0 +1,7 @@
+version = 1
+revision = 1
+
+[[package]]
+name = "recallcoordinatorenv"
+version = "1.0.0"
+source = { virtual = "." }
