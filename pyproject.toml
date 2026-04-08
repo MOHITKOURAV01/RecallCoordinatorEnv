@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "recallcoordinatorenv"
+version = "1.0.0"
+description = "OpenEnv environment for product safety recall coordination"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi==0.111.0",
+    "uvicorn[standard]==0.29.0",
+    "pydantic==2.7.1",
+    "openai==1.30.1",
+    "httpx==0.27.0",
+    "python-dotenv==1.0.1",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["server*"]
