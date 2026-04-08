@@ -4,7 +4,7 @@ from typing import Any, Dict, Literal, Optional
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel
 
@@ -33,6 +33,33 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/", response_class=HTMLResponse)
+def root() -> str:
+    """HF Spaces opens `/` in the browser; API-only apps had no route here (404)."""
+    return """<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>RecallCoordinatorEnv</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:42rem;margin:2rem auto;padding:0 1rem;line-height:1.5;color:#1a1a1a}
+a{color:#0b57d0} code{background:#f2f2f2;padding:.1rem .35rem;border-radius:4px}
+ul{padding-left:1.2rem}
+</style>
+</head>
+<body>
+<h1>RecallCoordinatorEnv</h1>
+<p>OpenEnv API is running. This Space exposes a <strong>REST API</strong> (no web UI on <code>/</code> before).</p>
+<ul>
+<li><a href="/docs">Interactive API docs (Swagger)</a></li>
+<li><a href="/health">GET /health</a> — liveness + task ids</li>
+<li><a href="/tasks">GET /tasks</a> — task catalog</li>
+</ul>
+<p>Use <code>POST /reset</code> then <code>POST /step</code> with JSON bodies (see <code>/docs</code>).</p>
+</body>
+</html>"""
+
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
