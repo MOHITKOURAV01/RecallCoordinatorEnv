@@ -1,4 +1,14 @@
-<<<<<<< HEAD
+---
+title: RecallCoordinatorEnv
+emoji: 🧠
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+license: mit
+---
+
 # RecallCoordinatorEnv
 
 ![openenv](https://img.shields.io/badge/openenv%20validated-%E2%9C%85-blue)
@@ -229,17 +239,3 @@ python inference.py
 - ✅ **Deterministic graders** return a score in `[0.0, 1.0]` with partial credit
 - ✅ **Shaped rewards** (not binary), loop/invalid/time penalties, constraint pressure
 - ✅ **Docker-ready** (`python:3.11-slim`, port `7860`) for HF Spaces
-
-=======
----
-title: RecallCoordinatorEnv
-emoji: 🐢
-colorFrom: gray
-colorTo: green
-sdk: docker
-pinned: false
-license: mit
----
-
-Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
->>>>>>> hf/main
