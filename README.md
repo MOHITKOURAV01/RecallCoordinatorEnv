@@ -245,8 +245,29 @@ uvicorn server.main:app --host 0.0.0.0 --port 7860 --workers 1
 ```bash
 export HF_TOKEN="YOUR_OPENAI_API_KEY"
 export ENV_URL="http://localhost:7860"
+# optional (defaults shown):
+# export API_BASE_URL="https://api.openai.com/v1"
+# export MODEL_NAME="gpt-4.1-mini"
 python inference.py
 ```
+
+`HF_TOKEN` is **required** by `inference.py` and is passed to the OpenAI-compatible client as the API key (despite the name).
+
+### Hugging Face Spaces — secrets
+
+- **FastAPI server only** (`uvicorn` in Docker): no API key needed for `/`, `/health`, `/docs`, `POST /reset`, `POST /step`, etc.
+- **`inference.py`** (LLM agent that calls the env over HTTP): needs credentials and optional overrides.
+
+In the Space: **Settings → Variables and secrets** (repository variables), add:
+
+| Name | Required for inference | Default | Notes |
+|------|------------------------|---------|--------|
+| `HF_TOKEN` | Yes | — | OpenAI-compatible API key (same as local `export HF_TOKEN=...`). |
+| `ENV_URL` | No | `http://localhost:7860` | Env API base URL. **Inside the same container:** `http://127.0.0.1:7860`. **From your laptop** hitting the public Space: use your Space app URL (see Space “Embed” / browser address). |
+| `API_BASE_URL` | No | `https://api.openai.com/v1` | Compatible chat-completions API base. |
+| `MODEL_NAME` | No | `gpt-4.1-mini` | Model id for the agent. |
+
+If you run `inference.py` **locally** against a deployed Space, set `ENV_URL` to that Space’s HTTPS URL and `HF_TOKEN` to your API key; you do not have to add secrets to the Space unless you also run inference **inside** the Space container.
 
 ## Baseline Scores
 
