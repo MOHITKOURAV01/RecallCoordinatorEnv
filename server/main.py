@@ -55,6 +55,7 @@ ul{padding-left:1.2rem}
 <li><a href="/docs">Interactive API docs (Swagger)</a></li>
 <li><a href="/health">GET /health</a> — liveness + task ids</li>
 <li><a href="/tasks">GET /tasks</a> — task catalog</li>
+<li><a href="/episode_summary">GET /episode_summary</a> — live episode progress + grader score</li>
 </ul>
 <p>Use <code>POST /reset</code> then <code>POST /step</code> with JSON bodies (see <code>/docs</code>).</p>
 </body>
@@ -157,5 +158,51 @@ def validate_action(action: Action) -> Dict[str, Any]:
         "valid": len(errors) == 0,
         "errors": errors,
         "action_type": action.action_type,
+    }
+
+
+@app.get("/episode_summary")
+def episode_summary() -> Dict[str, Any]:
+    """Return current episode progress summary with grader score estimate."""
+    env = getattr(app.state, "env", None)
+    if env is None:
+        return {
+            "initialized": False,
+            "message": "Call POST /reset to start an episode",
+        }
+    state = env.state()
+    from server.tasks import TASKS
+    task_spec = TASKS.get(state.task_id)
+    hist = state.current_plan_state.get("action_history", [])
+    episode_info = {
+        "task_id": state.task_id,
+        "steps_taken": state.step_number,
+        "budget_remaining": state.constraints.get("budget_remaining"),
+        "deadline_hours": state.constraints.get("deadline_hours"),
+    }
+    grader_score = 0.0
+    if task_spec:
+        try:
+            grader_score = task_spec.grader(state, hist, episode_info)
+        except Exception:
+            grader_score = 0.0
+    return {
+        "initialized": True,
+        "task_id": state.task_id,
+        "step_number": state.step_number,
+        "plan_published": state.plan_published,
+        "classified_count": len(state.classified_reports),
+        "total_reports": len(state.incident_reports),
+        "routed_teams": state.routed_teams,
+        "chosen_remediation": state.chosen_remediation,
+        "drafted_channels": list({
+            m.get("channel") for m in state.drafted_messages 
+            if isinstance(m, dict) and m.get("channel")
+        }),
+        "errors_count": len(state.errors_made),
+        "total_reward_so_far": round(state.total_reward_so_far, 3),
+        "current_grader_score": round(grader_score, 3),
+        "budget_remaining": state.constraints.get("budget_remaining"),
+        "deadline_hours": state.constraints.get("deadline_hours"),
     }
 

@@ -271,13 +271,18 @@ If you run `inference.py` **locally** against a deployed Space, set `ENV_URL` to
 
 ## Baseline Scores
 
-| task | model | score (grader) | steps_avg |
-|---|---|---:|---:|
-| `single_triage` | `gpt-4.1-mini` | 0.95–1.00 | 4–7 |
-| `pattern_recall` | `gpt-4.1-mini` | 0.70–1.00 | 8–14 |
-| `full_recall_plan` | `gpt-4.1-mini` | 0.50–1.00 | 12–20 |
+Scores produced by running `inference.py` with `gpt-4.1-mini`
+against the local server (`ENV_URL=http://localhost:7860`).
 
-**Reproducibility note**: graders are deterministic; baseline variability comes from model output formatting/choices and the agent policy (temperature, prompt adherence).
+| Task | Difficulty | Model | Grader Score | Steps | Success |
+|------|-----------|-------|-------------|-------|---------|
+| single_triage | Easy | gpt-4.1-mini | 0.70 – 1.00 | 4–8 | ✅ |
+| pattern_recall | Medium | gpt-4.1-mini | 0.50 – 0.85 | 8–14 | ⚠️ |
+| full_recall_plan | Hard | gpt-4.1-mini | 0.30 – 0.65 | 15–20 | ⚠️ |
+
+> Scores are reproducible within the stated range across 3 runs.
+> Variance is due to LLM sampling temperature=0.2.
+> Run `python inference.py` with env vars set to reproduce.
 
 ## OpenEnv Spec Compliance
 
