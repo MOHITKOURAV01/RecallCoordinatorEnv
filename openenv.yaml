@@ -16,6 +16,9 @@ tasks:
   - id: full_recall_plan
     description: "Full recall coordination under deadline and budget"
     difficulty: hard
+  - id: regulatory_audit
+    description: "CPSC audit response with multi-SKU recall coordination"
+    difficulty: expert
 action_space:
   type: structured
   actions:

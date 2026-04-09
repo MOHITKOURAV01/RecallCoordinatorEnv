@@ -14,7 +14,7 @@ from server.tasks import TASKS
 
 
 class ResetRequest(BaseModel):
-    task_id: Literal["single_triage", "pattern_recall", "full_recall_plan"] = "single_triage"
+    task_id: Literal["single_triage", "pattern_recall", "full_recall_plan", "regulatory_audit"] = "single_triage"
 
 
 class StepResponse(BaseModel):
@@ -116,7 +116,7 @@ def get_state() -> State:
 def health() -> Dict[str, Any]:
     return {
         "status": "ok",
-        "tasks": ["single_triage", "pattern_recall", "full_recall_plan"],
+        "tasks": ["single_triage", "pattern_recall", "full_recall_plan", "regulatory_audit"],
         "version": "1.0.0",
         "env": "RecallCoordinatorEnv",
     }

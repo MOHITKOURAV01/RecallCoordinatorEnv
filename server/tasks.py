@@ -245,6 +245,121 @@ def grade_task_3_state(state: State) -> float:
     return grade_task_3(state, hist, {})
 
 
+def grade_task_4(
+    final_state: State,
+    action_history: Sequence[Dict[str, Any]],
+    episode_info: Dict[str, Any],
+) -> float:
+    """
+    TASK 4 (EXPERT) — regulatory_audit
+    Scenario: CPSC audit letter received. Agent must:
+    - Classify all 8 incident reports
+    - Query DB for all affected batches
+    - Route to legal + quality + comms
+    - Draft regulator response + internal corrective action plan
+    - Choose remediation strategy
+    - Publish within budget and deadline
+
+    Scoring (0.0-1.0, deterministic, partial credit):
+    +0.10 all 8 reports classified
+    +0.10 injury reports classified as critical
+    +0.10 query_db used for batch identification
+    +0.10 legal + quality + comms routed (3 teams)
+    +0.15 regulator message drafted with required fields
+    +0.15 internal message drafted
+    +0.10 remediation chosen
+    +0.10 plan published
+    +0.05 within deadline
+    +0.05 within budget
+    """
+    try:
+        score = 0.0
+        reports = getattr(final_state, "incident_reports", [])
+        reports_list = reports if isinstance(reports, list) else []
+        report_ids = []
+        injury_ids = []
+        for r in reports_list:
+            rid = getattr(r, "report_id", None)
+            if isinstance(rid, str):
+                report_ids.append(rid)
+            if bool(getattr(r, "injury_reported", False)) and isinstance(rid, str):
+                injury_ids.append(rid)
+
+        classified = _safe_dict(getattr(final_state, "classified_reports", {}))
+
+        # +0.10 all 8 classified
+        if len(report_ids) == 8 and all(rid in classified for rid in report_ids):
+            score += 0.10
+
+        # +0.10 injury reports = critical
+        if injury_ids and all(
+            str(_safe_dict(classified.get(rid, {})).get("severity", "")).strip().lower() == "critical"
+            for rid in injury_ids
+        ):
+            score += 0.10
+
+        # +0.10 query_db used
+        cps = _safe_dict(getattr(final_state, "current_plan_state", {}))
+        queries = cps.get("queries", [])
+        if isinstance(queries, list) and any(
+            isinstance(q, dict) and str(q.get("entity", "")).lower() in {"batch", "batches", "production"}
+            for q in queries
+        ):
+            score += 0.10
+
+        # +0.10 legal + quality + comms routed
+        routed = getattr(final_state, "routed_teams", [])
+        if isinstance(routed, list) and all(t in routed for t in ["legal", "quality", "comms"]):
+            score += 0.10
+
+        # +0.15 regulator message with required fields
+        msgs = [m for m in _safe_list(getattr(final_state, "drafted_messages", [])) if isinstance(m, dict)]
+        msg_by_channel = {str(m.get("channel")): m for m in msgs if m.get("channel")}
+
+        def _has_core_fields(m: Dict[str, Any]) -> bool:
+            vars_ = m.get("variables", {})
+            if not isinstance(vars_, dict):
+                return False
+            return all(str(vars_.get(k, "")).strip() for k in ["sku_list", "batch_list", "hazard_summary", "contact_info"])
+
+        if "regulator" in msg_by_channel and _has_core_fields(msg_by_channel["regulator"]):
+            score += 0.15
+
+        # +0.15 internal message drafted
+        if "internal" in msg_by_channel:
+            score += 0.15
+
+        # +0.10 remediation chosen
+        if str(getattr(final_state, "chosen_remediation", "") or "").strip().lower() in {
+            "recall", "repair", "replace", "refund", "service_bulletin"
+        }:
+            score += 0.10
+
+        # +0.10 plan published
+        if bool(getattr(final_state, "plan_published", False)):
+            score += 0.10
+
+        # +0.05 within deadline
+        constraints = _safe_dict(getattr(final_state, "constraints", {}))
+        deadline_hours = constraints.get("deadline_hours")
+        if isinstance(deadline_hours, int) and deadline_hours > 0:
+            score += 0.05
+
+        # +0.05 within budget
+        budget_remaining = constraints.get("budget_remaining")
+        if isinstance(budget_remaining, (int, float)) and float(budget_remaining) >= 0.0:
+            score += 0.05
+
+        return _clamp01(score)
+    except Exception:
+        return 0.0
+
+
+def grade_task_4_state(state: State) -> float:
+    hist = _safe_list(_safe_dict(getattr(state, "current_plan_state", {})).get("action_history"))
+    return grade_task_4(state, hist, {})
+
+
 class GraderValidator:
     """
     Validates grader contracts:
@@ -656,6 +771,103 @@ TASKS: Dict[str, TaskSpec] = {
         ],
         initial_constraints={"budget_remaining": 50000.0, "deadline_hours": 48, "regulator_deadline": "2026-04-02T17:00:00Z"},
         grader=grade_task_3,
+    ),
+    "regulatory_audit": TaskSpec(
+        task_id="regulatory_audit",
+        difficulty="expert",
+        description=(
+            "CPSC audit received. Classify all reports, query affected batches, "
+            "route to legal/quality/comms, draft regulator response + internal plan, "
+            "choose remediation, publish within budget and deadline."
+        ),
+        initial_reports=[
+            IncidentReport(
+                report_id="r1",
+                product_sku="SPACE-HEATER-X",
+                batch_code="SHX-25-02",
+                hazard_description="Heater sparks; fire risk confirmed by lab.",
+                severity_raw="Property damage; no injury",
+                date_reported="2026-01-15",
+                region="NA",
+                injury_reported=False,
+            ),
+            IncidentReport(
+                report_id="r2",
+                product_sku="SPACE-HEATER-X",
+                batch_code="SHX-25-02",
+                hazard_description="Overheating causes smoke and burn marks.",
+                severity_raw="Minor burn on hand reported",
+                date_reported="2026-01-18",
+                region="EU",
+                injury_reported=True,
+            ),
+            IncidentReport(
+                report_id="r3",
+                product_sku="AIR-FRYER-Z",
+                batch_code="AFZ-24-12",
+                hazard_description="Basket latch fails; hot contents spilled.",
+                severity_raw="Second-degree burn on forearm",
+                date_reported="2026-01-20",
+                region="NA",
+                injury_reported=True,
+            ),
+            IncidentReport(
+                report_id="r4",
+                product_sku="AIR-FRYER-Z",
+                batch_code="AFZ-24-12",
+                hazard_description="Latch mechanism defective; near miss.",
+                severity_raw="No injury; property damage",
+                date_reported="2026-01-22",
+                region="APAC",
+                injury_reported=False,
+            ),
+            IncidentReport(
+                report_id="r5",
+                product_sku="SPACE-HEATER-X",
+                batch_code="SHX-25-03",
+                hazard_description="Electrical arcing; tripped breaker.",
+                severity_raw="No injury; outlet damaged",
+                date_reported="2026-01-25",
+                region="NA",
+                injury_reported=False,
+            ),
+            IncidentReport(
+                report_id="r6",
+                product_sku="KITCH-MIX-200",
+                batch_code="KM200-24-11",
+                hazard_description="Smoke from motor; electrical short.",
+                severity_raw="Smoke inhalation; treated at ER",
+                date_reported="2026-01-28",
+                region="EU",
+                injury_reported=True,
+            ),
+            IncidentReport(
+                report_id="r7",
+                product_sku="KITCH-MIX-200",
+                batch_code="KM200-24-11",
+                hazard_description="Sparks from base during normal use.",
+                severity_raw="No injury; unit destroyed",
+                date_reported="2026-01-30",
+                region="NA",
+                injury_reported=False,
+            ),
+            IncidentReport(
+                report_id="r8",
+                product_sku="AIR-FRYER-Z",
+                batch_code="AFZ-24-11",
+                hazard_description="Handle loosens; basket tips; hot oil spill.",
+                severity_raw="First-degree burn reported",
+                date_reported="2026-02-01",
+                region="EU",
+                injury_reported=True,
+            ),
+        ],
+        initial_constraints={
+            "budget_remaining": 75000.0,
+            "deadline_hours": 48,
+            "regulator_deadline": "2026-04-12T17:00:00Z",
+        },
+        grader=grade_task_4,
     ),
 }
 
