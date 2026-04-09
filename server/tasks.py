@@ -17,7 +17,13 @@ class TaskSpec:
 
 
 def _clamp01(x: float) -> float:
-    return max(0.0, min(float(x), 1.0))
+    """Clamp to strictly open interval (0, 1) as required by validator."""
+    clamped = max(0.0, min(float(x), 1.0))
+    if clamped <= 0.0:
+        return 0.001
+    if clamped >= 1.0:
+        return 0.999
+    return clamped
 
 
 def _safe_list(x: Any) -> List[Any]:
@@ -472,7 +478,7 @@ def _sample_tests() -> None:
         errors_made=[],
         total_reward_so_far=0.0,
     )
-    assert abs(grade_task_1(s1_perfect, [], {}) - 1.0) < 1e-12
+    assert 0.9 <= grade_task_1(s1_perfect, [], {}) < 1.0
 
     s1_partial = State.model_validate(s1_perfect.model_dump(mode="python"))
     s1_partial.routed_teams = []
@@ -482,7 +488,7 @@ def _sample_tests() -> None:
     s1_zero.classified_reports = {}
     s1_zero.routed_teams = []
     s1_zero.chosen_remediation = None
-    assert abs(grade_task_1(s1_zero, [], {}) - 0.0) < 1e-12
+    assert grade_task_1(s1_zero, [], {}) <= 0.01
 
     # ---- Task 2
     t2 = TASKS["pattern_recall"]
@@ -502,7 +508,7 @@ def _sample_tests() -> None:
         errors_made=[],
         total_reward_so_far=0.0,
     )
-    assert abs(grade_task_2(s2_perfect, [], {}) - 1.0) < 1e-12
+    assert 0.9 <= grade_task_2(s2_perfect, [], {}) < 1.0
 
     s2_partial = State.model_validate(s2_perfect.model_dump(mode="python"))
     s2_partial.plan_published = False
@@ -517,7 +523,7 @@ def _sample_tests() -> None:
     s2_zero.chosen_remediation = None
     s2_zero.plan_published = False
     s2_zero.errors_made = ["invalid"]
-    assert abs(grade_task_2(s2_zero, [], {}) - 0.0) < 1e-12
+    assert grade_task_2(s2_zero, [], {}) <= 0.01
 
     # ---- Task 3
     t3 = TASKS["full_recall_plan"]
@@ -541,7 +547,7 @@ def _sample_tests() -> None:
         errors_made=[],
         total_reward_so_far=0.0,
     )
-    assert abs(grade_task_3(s3_perfect, [], {}) - 1.0) < 1e-12
+    assert 0.9 <= grade_task_3(s3_perfect, [], {}) < 1.0
 
     s3_partial = State.model_validate(s3_perfect.model_dump(mode="python"))
     s3_partial.drafted_messages = [{"channel": "customer", "variables": {"sku_list": "A", "batch_list": "B", "hazard_summary": "C", "contact_info": "D"}}]
@@ -558,7 +564,7 @@ def _sample_tests() -> None:
     s3_zero.plan_published = False
     s3_zero.constraints["budget_remaining"] = -1.0
     s3_zero.current_plan_state = {"action_history": []}
-    assert abs(grade_task_3(s3_zero, [], {}) - 0.0) < 1e-12
+    assert grade_task_3(s3_zero, [], {}) <= 0.01
 
 
 TASKS: Dict[str, TaskSpec] = {
