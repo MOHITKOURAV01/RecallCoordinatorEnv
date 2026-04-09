@@ -269,6 +269,47 @@ In the Space: **Settings → Variables and secrets** (repository variables), add
 
 If you run `inference.py` **locally** against a deployed Space, set `ENV_URL` to that Space’s HTTPS URL and `HF_TOKEN` to your API key; you do not have to add secrets to the Space unless you also run inference **inside** the Space container.
 
+## Example Episode Walkthrough
+
+Below is a complete example of a successful `single_triage` episode
+showing exact actions, rewards, and final grader score.
+POST /reset  ->  {"task_id": "single_triage"}
+[START] task=single_triage env=RecallCoordinatorEnv model=gpt-4.1-mini
+Step 1 - classify_incident
+Action: {"action_type": "classify_incident",
+"parameters": {"report_id": "r1",
+"severity": "high",
+"hazard_type": "choking"}}
+Step reward: +0.18  (valid classify + coverage milestone)
+[STEP] step=1 action=classify_incident reward=0.18 done=false error=null
+Step 2 - route
+Action: {"action_type": "route",
+"parameters": {"team": "quality"}}
+Step reward: +0.07  (new team routed)
+[STEP] step=2 action=route reward=0.07 done=false error=null
+Step 3 - choose_remediation
+Action: {"action_type": "choose_remediation",
+"parameters": {"strategy": "service_bulletin"}}
+Step reward: +0.18  (prerequisite met + correct strategy for easy task)
+[STEP] step=3 action=choose_remediation reward=0.18 done=false error=null
+Step 4 - publish_plan
+Action: {"action_type": "publish_plan",
+"parameters": {"plan_id": "plan-001"}}
+Step reward: +0.25  (requirements met milestone)
+[STEP] step=4 action=publish_plan reward=0.25 done=true error=null
+Grader evaluation:
+✅ r1 classified as "high"      -> +0.40
+✅ routed to "quality"          -> +0.30
+✅ remediation = service_bulletin -> +0.30
+Final grader score: 1.00
+[END] success=true steps=4 score=1.000 rewards=0.18,0.07,0.18,0.25
+
+### Why this matters
+The environment rewards **sequencing** - classification must come before
+remediation, which must come before publish. Skipping steps or publishing
+early triggers penalties. This mirrors real recall workflows where
+regulatory compliance requires documented evidence at each stage.
+
 ## Baseline Scores
 
 Scores produced by running `inference.py` with `gpt-4.1-mini`
