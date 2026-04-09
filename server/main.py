@@ -56,6 +56,7 @@ ul{padding-left:1.2rem}
 <li><a href="/health">GET /health</a> — liveness + task ids</li>
 <li><a href="/tasks">GET /tasks</a> — task catalog</li>
 <li><a href="/episode_summary">GET /episode_summary</a> — live episode progress + grader score</li>
+<li><a href="/metrics">GET /metrics</a> — aggregate episode stats</li>
 </ul>
 <p>Use <code>POST /reset</code> then <code>POST /step</code> with JSON bodies (see <code>/docs</code>).</p>
 </body>
@@ -80,6 +81,7 @@ def reset(req: Optional[ResetRequest] = None) -> Observation:
     task_id = (req.task_id if req is not None else None) or "single_triage"
     if task_id not in TASKS:
         raise HTTPException(status_code=400, detail=f"Unknown task_id: {task_id}")
+    _episode_stats["total_episodes"] += 1
     env = RecallCoordinatorEnv(task_id=task_id, max_steps=20)
     app.state.env = env
     return env.reset()
@@ -90,6 +92,10 @@ def step(action: Action) -> StepResponse:
     env = _get_env()
     try:
         obs, reward, done, info = env.step(action)
+        if bool(done) and isinstance(info.get("grader_score"), float):
+            task = obs.task_id
+            if task in _episode_stats["task_scores"]:
+                _episode_stats["task_scores"][task].append(info["grader_score"])
         return StepResponse(observation=obs, reward=float(reward), done=bool(done), info=info)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
@@ -215,4 +221,38 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# In-memory episode stats tracker
+_episode_stats: Dict[str, Any] = {
+    "total_episodes": 0,
+    "task_scores": {
+        "single_triage": [],
+        "pattern_recall": [],
+        "full_recall_plan": [],
+    },
+}
+
+
+@app.get("/metrics")
+def metrics() -> Dict[str, Any]:
+    """Live episode stats — useful for evaluators to see aggregate performance."""
+    task_scores = _episode_stats["task_scores"]
+    completion_rates = {}
+    avg_scores = {}
+    for task, scores in task_scores.items():
+        if scores:
+            avg_scores[task] = round(sum(scores) / len(scores), 3)
+            completion_rates[task] = round(
+                sum(1 for s in scores if s >= 0.9) / len(scores), 3
+            )
+        else:
+            avg_scores[task] = None
+            completion_rates[task] = None
+    return {
+        "total_episodes": _episode_stats["total_episodes"],
+        "avg_grader_scores": avg_scores,
+        "task_completion_rates": completion_rates,
+        "episodes_per_task": {t: len(s) for t, s in task_scores.items()},
+    }
 
